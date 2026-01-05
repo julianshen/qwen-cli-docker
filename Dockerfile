@@ -61,16 +61,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lsof \
     socat \
     ca-certificates \
-    sudo \
     gosu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Rename existing 'node' user/group to 'qwen' (node:20-slim has node:node with 1000:1000)
 RUN groupmod -n $USER_NAME node \
-    && usermod -l $USER_NAME -d /home/$USER_NAME -m node \
-    && echo "$USER_NAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USER_NAME \
-    && chmod 0440 /etc/sudoers.d/$USER_NAME
+    && usermod -l $USER_NAME -d /home/$USER_NAME -m node
 
 # Set up npm global package folder with proper permissions for non-root user
 RUN mkdir -p /home/$USER_NAME/.npm-global \

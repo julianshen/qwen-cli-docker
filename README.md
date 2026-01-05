@@ -63,7 +63,7 @@ This image runs as a non-root user (`qwen`) with:
 - Home directory at `/home/qwen`
 - npm global packages at `/home/qwen/.npm-global`
 - Working directory at `/workspace`
-- Sudo access available if needed
+- No sudo access (use `docker exec -u root` if root access is needed)
 
 ### Host UID/GID Matching
 
