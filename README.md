@@ -52,11 +52,8 @@ cd qwen-cli-docker
 # Clone qwen-code source
 git clone --depth 1 https://github.com/QwenLM/qwen-code.git qwen-code-src
 
-# Copy rootless Dockerfile
-cp Dockerfile qwen-code-src/
-
-# Build the image
-docker build -t qwen-code:local ./qwen-code-src
+# Build the image using our Dockerfile with qwen-code source as context
+docker build -t qwen-code:local -f Dockerfile ./qwen-code-src
 ```
 
 ## Rootless Design

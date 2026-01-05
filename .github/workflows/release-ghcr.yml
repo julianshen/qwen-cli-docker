@@ -38,10 +38,7 @@ jobs:
           submodules: recursive
 
       - name: Clone qwen-code source
-        run: |
-          git clone --depth 1 https://github.com/QwenLM/qwen-code.git qwen-code-src
-          # Copy our rootless Dockerfile into the source directory
-          cp Dockerfile qwen-code-src/Dockerfile
+        run: git clone --depth 1 https://github.com/QwenLM/qwen-code.git qwen-code-src
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -85,7 +82,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./qwen-code-src
-          file: ./qwen-code-src/Dockerfile
+          file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
