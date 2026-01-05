@@ -37,6 +37,7 @@ ENV SANDBOX="$SANDBOX_NAME"
 ENV CLI_VERSION=$CLI_VERSION_ARG
 
 # Create non-root user for rootless operation
+# Note: node:20-slim has 'node' user with UID 1000, we rename it to 'qwen'
 ARG USER_NAME=qwen
 ARG USER_UID=1000
 ARG USER_GID=1000
@@ -61,12 +62,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     socat \
     ca-certificates \
     sudo \
+    gosu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Create user group and user (if they don't already exist)
-RUN groupadd --gid $USER_GID $USER_NAME 2>/dev/null || true \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USER_NAME 2>/dev/null || true \
+# Rename existing 'node' user/group to 'qwen' (node:20-slim has node:node with 1000:1000)
+RUN groupmod -n $USER_NAME node \
+    && usermod -l $USER_NAME -d /home/$USER_NAME -m node \
     && echo "$USER_NAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USER_NAME \
     && chmod 0440 /etc/sudoers.d/$USER_NAME
 
@@ -116,11 +118,6 @@ fi
 exec gosu qwen "$@"
 ENTRYPOINT_SCRIPT
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Install gosu for proper user switching in entrypoint
-RUN apt-get update && apt-get install -y --no-install-recommends gosu \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 # Set git safe directory for the workspace (as qwen user)
 RUN gosu qwen git config --global --add safe.directory /workspace
