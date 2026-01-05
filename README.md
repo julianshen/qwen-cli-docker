@@ -5,6 +5,7 @@ A rootless Docker image for [Qwen Code](https://github.com/QwenLM/qwen-code) CLI
 ## Features
 
 - **Rootless**: Runs as non-root user (`qwen`) for enhanced security
+- **Host UID/GID matching**: Files created in mounted workspace keep host ownership
 - **Multi-architecture**: Supports `linux/amd64` and `linux/arm64`
 - **Automated builds**: GitHub Actions workflow for automatic releases
 - **GHCR hosted**: Images available from GitHub Container Registry
@@ -58,11 +59,20 @@ docker build -t qwen-code:local -f Dockerfile ./qwen-code-src
 
 ## Rootless Design
 
-This image runs as a non-root user (`qwen`, UID 1000) with:
+This image runs as a non-root user (`qwen`) with:
 - Home directory at `/home/qwen`
 - npm global packages at `/home/qwen/.npm-global`
 - Working directory at `/workspace`
 - Sudo access available if needed
+
+### Host UID/GID Matching
+
+When you mount a directory from your host to `/workspace`, the entrypoint automatically detects the owner's UID/GID and adjusts the container user to match. This ensures files created inside the container have the same ownership as on your host system.
+
+```bash
+# Files created will be owned by your host user, not UID 1000
+docker run -it --rm -v $(pwd):/workspace ghcr.io/YOUR_USERNAME/qwen-cli-docker:latest
+```
 
 ## GitHub Actions Workflow
 

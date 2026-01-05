@@ -91,12 +91,41 @@ RUN npm install -g /tmp/*.tgz \
 RUN mkdir -p /workspace \
     && chown -R $USER_UID:$USER_GID /workspace
 
-# Switch to non-root user
-USER $USER_NAME
+# Create entrypoint script that matches host UID/GID
+RUN cat <<'ENTRYPOINT_SCRIPT' > /usr/local/bin/entrypoint.sh
+#!/bin/bash
+set -e
+
+# Get the UID/GID of the /workspace directory (mounted from host)
+if [ -d "/workspace" ]; then
+    WORKSPACE_UID=$(stat -c '%u' /workspace)
+    WORKSPACE_GID=$(stat -c '%g' /workspace)
+
+    # Only modify if workspace is owned by a non-root user and differs from current user
+    if [ "$WORKSPACE_UID" != "0" ] && [ "$WORKSPACE_UID" != "$(id -u qwen)" ]; then
+        # Modify qwen user's UID/GID to match workspace owner
+        groupmod -g "$WORKSPACE_GID" qwen 2>/dev/null || true
+        usermod -u "$WORKSPACE_UID" -g "$WORKSPACE_GID" qwen 2>/dev/null || true
+
+        # Fix ownership of home directory
+        chown -R qwen:qwen /home/qwen 2>/dev/null || true
+    fi
+fi
+
+# Execute the command as qwen user
+exec gosu qwen "$@"
+ENTRYPOINT_SCRIPT
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Install gosu for proper user switching in entrypoint
+RUN apt-get update && apt-get install -y --no-install-recommends gosu \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set git safe directory for the workspace (as qwen user)
+RUN gosu qwen git config --global --add safe.directory /workspace
+
 WORKDIR /workspace
 
-# Set git safe directory for the workspace
-RUN git config --global --add safe.directory /workspace
-
-# Default entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["qwen"]
